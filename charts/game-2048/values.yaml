@@ -1,6 +1,6 @@
 image:
-  repository: alexwhen/docker-2048
-  tag: latest
+  repository: nginx
+  tag: alpine
   pullPolicy: IfNotPresent
 
 replicaCount: 1
