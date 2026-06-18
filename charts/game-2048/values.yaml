@@ -1,0 +1,13 @@
+image:
+  repository: alexwhen/docker-2048
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  port: 80
+
+ingress:
+  host: game.knodes.app
+  certResolver: letsencrypt
