@@ -21,6 +21,13 @@ spec:
         resources:
           requests:
             storage: 2Gi
+  volumes:
+    - name: github-token
+      secret:
+        secretName: cluster-config-deploy-key
+        items:
+          - key: token
+            path: token
   templates:
     - name: pipeline
       dag:
@@ -69,20 +76,17 @@ spec:
         command: [sh, -c]
         args:
           - |
-            # Inject token into URL for private repo auth
-            AUTHED_URL=$(echo "{{inputs.parameters.repo-url}}" | sed "s|https://|https://$GITHUB_TOKEN@|")
-            git clone "$AUTHED_URL" /workspace/src
+            echo "machine github.com login x-token-auth password $(cat /secret/token)" > /root/.netrc
+            chmod 600 /root/.netrc
+            git clone "{{inputs.parameters.repo-url}}" /workspace/src
             cd /workspace/src
             git checkout "{{inputs.parameters.commit-sha}}"
-        env:
-          - name: GITHUB_TOKEN
-            valueFrom:
-              secretKeyRef:
-                name: cluster-config-deploy-key
-                key: token
         volumeMounts:
           - name: workspace
             mountPath: /workspace
+          - name: github-token
+            mountPath: /secret
+            readOnly: true
 
     - name: build-image
       inputs:
