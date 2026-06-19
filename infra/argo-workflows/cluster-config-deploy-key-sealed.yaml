@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: cluster-config-deploy-key
+  namespace: argo
+spec:
+  encryptedData:
+    token: AgCH5bxHgMZpRz1MQOlUvb5udJREdPzZUJCLeDEg96xQvC91o59SAhJbxtLbBzrK+/xpH64BPCBXJTJ5+olNwbXjAG+451+yYLHSOwxLya2XaH8srDEMfQ4Ll0oWcTW+LnShNUlQffUfdG4Ecn0BRUkU88kwq9Ptovz7X4Nwymadjb/JK27BqkvjYSrpDyDGHLv8BHbPipVk82g8GkMMIokTQfU/XG+bLs4YKNDaNUI/fTrAivfJdkXWlvdV8faHogdE1jXeRNTplpkKkrjIU81muJF02rWxlOjc5iun6WaboNq0Iz2u2b0Xba7wlbf9vYLwMM4GVnel/prf8giyVJw1Dn1HcDC58/b3P+l6xFUiyh8APOh3Uj8McuxPBy+6fLf9wsTrUA0T1md+R95qpBN3eFopd4y4DfloVssnXmV6bGHgusWZ6sdZhh2xlXT0nQPk5i0uE6YEdwod0XCLdMee9u8Ro3A70Sv2N+AM0U+6OSYu0nGaAf4DwaXV3j8rwFgg8EIrhVH61P2Qe+o4qt/Q+DMeZ3UxYTjQ42IRlEvwtLh2I2sLfTfsknBFDcXaWGYJ64f5byKsGIZ5GChYXNrQgE3oVo3vm8YX6xXbuzG27CkLDpW1kZ8boFmwiqwAHU6QUPXmNN6m3iC4Oc/PQ6bzQf/EqxXI6Q3fiRHIEGxHBciL9GYOM3jReyzDQSrYALpTmZ48TobjvN1CdLItpIuBJPZBjy4QVpU0HaB+3fdD3BcKcbD/ybyIS6Guhcq3KQyStpzVQAt5FGwjIJwiDiS04ANxGWQSX1oawplcYmtdEOmhtVLKvs2zsHiTPC4=
+  template:
+    metadata:
+      name: cluster-config-deploy-key
+      namespace: argo
