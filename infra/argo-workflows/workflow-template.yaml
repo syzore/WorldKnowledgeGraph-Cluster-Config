@@ -69,9 +69,17 @@ spec:
         command: [sh, -c]
         args:
           - |
-            git clone "{{inputs.parameters.repo-url}}" /workspace/src
+            # Inject token into URL for private repo auth
+            AUTHED_URL=$(echo "{{inputs.parameters.repo-url}}" | sed "s|https://|https://$(GITHUB_TOKEN)@|")
+            git clone "$AUTHED_URL" /workspace/src
             cd /workspace/src
             git checkout "{{inputs.parameters.commit-sha}}"
+        env:
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: cluster-config-deploy-key
+                key: token
         volumeMounts:
           - name: workspace
             mountPath: /workspace
