@@ -1,0 +1,138 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: backend
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: sensor
+  dependencies:
+    - name: backend-push
+      eventSourceName: github-webhooks
+      eventName: backend
+  triggers:
+    - template:
+        name: build-and-deploy-backend
+        argoWorkflow:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: knodes-backend-
+                namespace: argo
+              spec:
+                workflowTemplateRef:
+                  name: build-and-deploy
+                arguments:
+                  parameters:
+                    - name: repo-url
+                      value: https://github.com/syzore/knodes-backend.git
+                    - name: service-name
+                      value: knodes-backend
+                    - name: commit-sha
+                      value: placeholder
+          parameters:
+            - src:
+                dependencyName: backend-push
+                dataKey: body.after
+              dest: spec.arguments.parameters.2.value
+      retryStrategy:
+        steps: 3
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: backoffice
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: sensor
+  dependencies:
+    - name: backoffice-push
+      eventSourceName: github-webhooks
+      eventName: backoffice
+  triggers:
+    - template:
+        name: build-and-deploy-backoffice
+        argoWorkflow:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: knodes-backoffice-
+                namespace: argo
+              spec:
+                workflowTemplateRef:
+                  name: build-and-deploy
+                arguments:
+                  parameters:
+                    - name: repo-url
+                      value: https://github.com/syzore/knodes-backoffice.git
+                    - name: service-name
+                      value: knodes-backoffice
+                    - name: commit-sha
+                      value: placeholder
+          parameters:
+            - src:
+                dependencyName: backoffice-push
+                dataKey: body.after
+              dest: spec.arguments.parameters.2.value
+      retryStrategy:
+        steps: 3
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: app
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: sensor
+  dependencies:
+    - name: app-push
+      eventSourceName: github-webhooks
+      eventName: app
+  triggers:
+    - template:
+        name: build-and-deploy-app
+        argoWorkflow:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: knodes-app-
+                namespace: argo
+              spec:
+                workflowTemplateRef:
+                  name: build-and-deploy
+                arguments:
+                  parameters:
+                    - name: repo-url
+                      value: https://github.com/syzore/knodes-app.git
+                    - name: service-name
+                      value: knodes-app
+                    - name: commit-sha
+                      value: placeholder
+          parameters:
+            - src:
+                dependencyName: app-push
+                dataKey: body.after
+              dest: spec.arguments.parameters.2.value
+      retryStrategy:
+        steps: 3

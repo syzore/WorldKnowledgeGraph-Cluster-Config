@@ -1,0 +1,42 @@
+# ServiceAccount used by workflow pods to interact with the Argo Workflows API
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: workflow
+  namespace: argo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: workflow
+  namespace: argo
+rules:
+  - apiGroups: [argoproj.io]
+    resources: [workflows, workflowtaskresults]
+    verbs: [get, list, watch, update, patch]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch, create, delete, patch]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources: [persistentvolumeclaims]
+    verbs: [create, delete]
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: workflow
+  namespace: argo
+subjects:
+  - kind: ServiceAccount
+    name: workflow
+    namespace: argo
+roleRef:
+  kind: Role
+  name: workflow
+  apiGroup: rbac.authorization.k8s.io

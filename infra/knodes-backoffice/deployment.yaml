@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knodes-backoffice
+  namespace: knodes-backoffice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knodes-backoffice
+  template:
+    metadata:
+      labels:
+        app: knodes-backoffice
+    spec:
+      imagePullSecrets:
+        - name: registry-pull-secret
+      containers:
+        - name: backoffice
+          image: registry.knodes.app/knodes-backoffice:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-config
+  namespace: registry
+data:
+  config.yml: |
+    version: 0.1
+    storage:
+      s3:
+        accesskey: ${OCI_ACCESS_KEY}
+        secretkey: ${OCI_SECRET_KEY}
+        region: ${OCI_REGION}
+        regionendpoint: https://${OCI_NAMESPACE}.compat.objectstorage.${OCI_REGION}.oraclecloud.com
+        bucket: ${OCI_BUCKET}
+        secure: true
+        v4auth: true
+        chunksize: 5242880
+        multipartcopythresholdsize: 33554432
+    http:
+      addr: :5000
+      secret: knodes-registry-http-secret-xk9m2p7r
+    auth:
+      htpasswd:
+        realm: registry.knodes.app
+        path: /auth/htpasswd
+    log:
+      level: info

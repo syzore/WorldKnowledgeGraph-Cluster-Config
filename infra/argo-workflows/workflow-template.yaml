@@ -1,0 +1,157 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: build-and-deploy
+  namespace: argo
+spec:
+  serviceAccountName: workflow
+  entrypoint: pipeline
+  arguments:
+    parameters:
+      - name: repo-url
+      - name: service-name
+      - name: commit-sha
+      - name: dockerfile-path
+        value: Dockerfile
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 2Gi
+  templates:
+    - name: pipeline
+      dag:
+        tasks:
+          - name: clone
+            template: clone-repo
+            arguments:
+              parameters:
+                - name: repo-url
+                  value: "{{workflow.parameters.repo-url}}"
+                - name: commit-sha
+                  value: "{{workflow.parameters.commit-sha}}"
+          - name: build
+            template: build-image
+            dependencies: [clone]
+            arguments:
+              parameters:
+                - name: dockerfile-path
+                  value: "{{workflow.parameters.dockerfile-path}}"
+          - name: push
+            template: push-image
+            dependencies: [build]
+            arguments:
+              parameters:
+                - name: service-name
+                  value: "{{workflow.parameters.service-name}}"
+                - name: commit-sha
+                  value: "{{workflow.parameters.commit-sha}}"
+          - name: deploy
+            template: deploy-image
+            dependencies: [push]
+            arguments:
+              parameters:
+                - name: service-name
+                  value: "{{workflow.parameters.service-name}}"
+                - name: commit-sha
+                  value: "{{workflow.parameters.commit-sha}}"
+
+    - name: clone-repo
+      inputs:
+        parameters:
+          - name: repo-url
+          - name: commit-sha
+      container:
+        image: alpine/git:latest
+        command: [sh, -c]
+        args:
+          - |
+            git clone "{{inputs.parameters.repo-url}}" /workspace/src
+            cd /workspace/src
+            git checkout "{{inputs.parameters.commit-sha}}"
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+
+    - name: build-image
+      inputs:
+        parameters:
+          - name: dockerfile-path
+      container:
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - --context=/workspace/src
+          - --dockerfile=/workspace/src/{{inputs.parameters.dockerfile-path}}
+          - --no-push
+          - --tar-path=/workspace/image.tar
+          - --cache=false
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+        securityContext:
+          runAsUser: 0
+
+    - name: push-image
+      inputs:
+        parameters:
+          - name: service-name
+          - name: commit-sha
+      container:
+        image: gcr.io/go-containerregistry/crane:debug
+        command: [sh, -c]
+        args:
+          - |
+            crane auth login registry.knodes.app \
+              --username "$(REGISTRY_USERNAME)" \
+              --password "$(REGISTRY_PASSWORD)"
+            crane push /workspace/image.tar "registry.knodes.app/{{inputs.parameters.service-name}}:{{inputs.parameters.commit-sha}}"
+            crane tag "registry.knodes.app/{{inputs.parameters.service-name}}:{{inputs.parameters.commit-sha}}" latest
+        env:
+          - name: REGISTRY_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: registry-push-credentials
+                key: username
+          - name: REGISTRY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: registry-push-credentials
+                key: password
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+
+    - name: deploy-image
+      inputs:
+        parameters:
+          - name: service-name
+          - name: commit-sha
+      container:
+        image: alpine:3.19
+        command: [sh, -c]
+        args:
+          - |
+            apk add --no-cache git
+            wget -qO /usr/local/bin/yq \
+              https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64
+            chmod +x /usr/local/bin/yq
+            git config --global user.email "pipeline@knodes.app"
+            git config --global user.name "Knodes Pipeline"
+            git clone \
+              "https://$(GITHUB_TOKEN)@github.com/syzore/WorldKnowledgeGraph-Cluster-Config.git" \
+              /tmp/cluster-config
+            cd /tmp/cluster-config
+            yq e ".spec.template.spec.containers[0].image = \"registry.knodes.app/{{inputs.parameters.service-name}}:{{inputs.parameters.commit-sha}}\"" \
+              -i "infra/{{inputs.parameters.service-name}}/deployment.yaml"
+            git add "infra/{{inputs.parameters.service-name}}/deployment.yaml"
+            git commit -m "chore: deploy {{inputs.parameters.service-name}}@{{inputs.parameters.commit-sha}}"
+            git push
+        env:
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: cluster-config-deploy-key
+                key: token

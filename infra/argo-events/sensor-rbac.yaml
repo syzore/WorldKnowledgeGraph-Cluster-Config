@@ -1,0 +1,31 @@
+# ServiceAccount for Sensors to use when submitting Workflows
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sensor
+  namespace: argo-events
+---
+# Allow the sensor SA to create Workflow resources in the argo namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sensor-submit-workflow
+  namespace: argo
+rules:
+  - apiGroups: [argoproj.io]
+    resources: [workflows]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sensor-submit-workflow
+  namespace: argo
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: argo-events
+roleRef:
+  kind: Role
+  name: sensor-submit-workflow
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: knodes-backend
+  namespace: knodes-backend
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`api.knodes.app`)
+      kind: Rule
+      services:
+        - name: knodes-backend
+          port: 8000
+  tls:
+    certResolver: letsencrypt

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+        - name: registry
+          image: registry:2.8.3
+          ports:
+            - containerPort: 5000
+          env:
+            - name: OCI_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: registry-oci-credentials
+                  key: access_key
+            - name: OCI_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: registry-oci-credentials
+                  key: secret_key
+            - name: OCI_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: registry-oci-credentials
+                  key: region
+            - name: OCI_NAMESPACE
+              valueFrom:
+                secretKeyRef:
+                  name: registry-oci-credentials
+                  key: namespace
+            - name: OCI_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: registry-oci-credentials
+                  key: bucket
+          volumeMounts:
+            - name: config
+              mountPath: /etc/docker/registry
+            - name: auth
+              mountPath: /auth
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: registry-config
+        - name: auth
+          secret:
+            secretName: registry-htpasswd

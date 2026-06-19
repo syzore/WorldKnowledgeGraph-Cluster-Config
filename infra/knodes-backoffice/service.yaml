@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: knodes-backoffice
+  namespace: knodes-backoffice
+spec:
+  selector:
+    app: knodes-backoffice
+  ports:
+    - port: 80
+      targetPort: 80

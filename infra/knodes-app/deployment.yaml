@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knodes-app
+  namespace: knodes-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knodes-app
+  template:
+    metadata:
+      labels:
+        app: knodes-app
+    spec:
+      imagePullSecrets:
+        - name: registry-pull-secret
+      containers:
+        - name: app
+          image: registry.knodes.app/knodes-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knodes-backend
+  namespace: knodes-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knodes-backend
+  template:
+    metadata:
+      labels:
+        app: knodes-backend
+    spec:
+      imagePullSecrets:
+        - name: registry-pull-secret
+      containers:
+        - name: backend
+          image: registry.knodes.app/knodes-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000

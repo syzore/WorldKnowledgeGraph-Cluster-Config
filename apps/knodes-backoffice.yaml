@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: knodes-backoffice
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/syzore/WorldKnowledgeGraph-Cluster-Config.git
+    targetRevision: main
+    path: infra/knodes-backoffice
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: knodes-backoffice
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
