@@ -1,6 +1,0 @@
-apiVersion: v2
-name: game-2048
-description: 2048 game placeholder for validating the GitOps pipeline
-type: application
-version: 0.1.0
-appVersion: "latest"
