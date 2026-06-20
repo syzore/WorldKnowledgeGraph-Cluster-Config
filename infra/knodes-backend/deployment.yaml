@@ -17,7 +17,7 @@ spec:
         - name: registry-pull-secret
       containers:
         - name: backend
-          image: registry.knodes.app/knodes-backend:b45970f340c6395afc25d2d7e57b07f80b72d963
+          image: registry.knodes.app/knodes-backend:973df71c6314bff42d3d344216fbfc88b737678a
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
