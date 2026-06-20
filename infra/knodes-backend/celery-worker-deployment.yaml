@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knodes-celery-worker
+  namespace: knodes-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knodes-celery-worker
+  template:
+    metadata:
+      labels:
+        app: knodes-celery-worker
+    spec:
+      imagePullSecrets:
+        - name: registry-pull-secret
+      containers:
+        - name: celery-worker
+          image: registry.knodes.app/knodes-backend:973df71c6314bff42d3d344216fbfc88b737678a
+          imagePullPolicy: Always
+          command:
+            - celery
+            - -A
+            - graph_knowledge_game.task_queue.app
+            - worker
+            - --loglevel=info
+            - --concurrency=2
+          envFrom:
+            - secretRef:
+                name: backend-secrets
+            - secretRef:
+                name: backend-anthropic
+          env:
+            - name: FIREBASE_SERVICE_ACCOUNT_JSON
+              value: /etc/firebase/FIREBASE_SERVICE_ACCOUNT_JSON
+          volumeMounts:
+            - name: firebase-secret
+              mountPath: /etc/firebase
+              readOnly: true
+      volumes:
+        - name: firebase-secret
+          secret:
+            secretName: backend-firebase
