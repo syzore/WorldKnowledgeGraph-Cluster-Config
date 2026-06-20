@@ -21,13 +21,11 @@ spec:
             - containerPort: 7474
             - containerPort: 7687
           env:
-            - name: NEO4J_PASSWORD
+            - name: NEO4J_AUTH
               valueFrom:
                 secretKeyRef:
                   name: neo4j-credentials
-                  key: password
-            - name: NEO4J_AUTH
-              value: "neo4j/$(NEO4J_PASSWORD)"
+                  key: auth
           volumeMounts:
             - name: data
               mountPath: /data
