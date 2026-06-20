@@ -13,6 +13,8 @@ spec:
       - name: commit-sha
       - name: dockerfile-path
         value: Dockerfile
+      - name: build-args
+        value: ""
   volumeClaimTemplates:
     - metadata:
         name: workspace
@@ -47,6 +49,8 @@ spec:
               parameters:
                 - name: dockerfile-path
                   value: "{{workflow.parameters.dockerfile-path}}"
+                - name: build-args
+                  value: "{{workflow.parameters.build-args}}"
           - name: push
             template: push-image
             dependencies: [build]
@@ -92,14 +96,26 @@ spec:
       inputs:
         parameters:
           - name: dockerfile-path
+          - name: build-args
+            value: ""
       container:
         image: gcr.io/kaniko-project/executor:latest
+        command: [sh, -c]
         args:
-          - --context=/workspace/src
-          - --dockerfile=/workspace/src/{{inputs.parameters.dockerfile-path}}
-          - --no-push
-          - --tar-path=/workspace/image.tar
-          - --cache=false
+          - |
+            EXTRA_ARGS=""
+            if [ -n "{{inputs.parameters.build-args}}" ]; then
+              for arg in $(echo "{{inputs.parameters.build-args}}" | tr ',' ' '); do
+                EXTRA_ARGS="$EXTRA_ARGS --build-arg=$arg"
+              done
+            fi
+            /kaniko/executor \
+              --context=/workspace/src \
+              --dockerfile=/workspace/src/{{inputs.parameters.dockerfile-path}} \
+              --no-push \
+              --tar-path=/workspace/image.tar \
+              --cache=false \
+              $EXTRA_ARGS
         volumeMounts:
           - name: workspace
             mountPath: /workspace

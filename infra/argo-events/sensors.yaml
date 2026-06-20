@@ -83,6 +83,8 @@ spec:
                       value: knodes-backoffice
                     - name: commit-sha
                       value: placeholder
+                    - name: build-args
+                      value: VITE_API_URL=https://api.knodes.app
           parameters:
             - src:
                 dependencyName: backoffice-push

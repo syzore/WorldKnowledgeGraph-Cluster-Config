@@ -17,7 +17,7 @@ spec:
         - name: registry-pull-secret
       containers:
         - name: backoffice
-          image: registry.knodes.app/knodes-backoffice:latest
+          image: registry.knodes.app/knodes-backoffice:placeholder
           imagePullPolicy: Always
           ports:
             - containerPort: 80
