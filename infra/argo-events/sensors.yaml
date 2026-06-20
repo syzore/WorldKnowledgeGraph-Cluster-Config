@@ -131,10 +131,42 @@ spec:
                       value: knodes-app
                     - name: commit-sha
                       value: placeholder
+                    - name: build-args
+                      value: FLUTTER_BASE_URL=https://api.knodes.app
           parameters:
             - src:
                 dependencyName: app-push
                 dataKey: body.after
               dest: spec.arguments.parameters.2.value
+      retryStrategy:
+        steps: 3
+    - template:
+        name: build-apk
+        argoWorkflow:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: knodes-apk-
+                namespace: argo
+              spec:
+                workflowTemplateRef:
+                  name: build-apk
+                arguments:
+                  parameters:
+                    - name: repo-url
+                      value: https://github.com/syzore/knodes-app.git
+                    - name: commit-sha
+                      value: placeholder
+          parameters:
+            - src:
+                dependencyName: app-push
+                dataKey: body.after
+              dest: spec.arguments.parameters.1.value
       retryStrategy:
         steps: 3

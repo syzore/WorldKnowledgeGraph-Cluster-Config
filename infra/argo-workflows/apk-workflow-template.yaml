@@ -1,0 +1,204 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: build-apk
+  namespace: argo
+spec:
+  serviceAccountName: workflow
+  entrypoint: pipeline
+  arguments:
+    parameters:
+      - name: repo-url
+      - name: commit-sha
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 4Gi
+  volumes:
+    - name: github-token
+      secret:
+        secretName: cluster-config-deploy-key
+        items:
+          - key: token
+            path: token
+    - name: android-keystore
+      secret:
+        secretName: android-keystore
+  templates:
+    - name: pipeline
+      dag:
+        tasks:
+          - name: clone
+            template: clone-repo
+            arguments:
+              parameters:
+                - name: repo-url
+                  value: "{{workflow.parameters.repo-url}}"
+                - name: commit-sha
+                  value: "{{workflow.parameters.commit-sha}}"
+          - name: build
+            template: build-apk
+            dependencies: [clone]
+            arguments:
+              parameters:
+                - name: commit-sha
+                  value: "{{workflow.parameters.commit-sha}}"
+          - name: upload
+            template: upload-apk
+            dependencies: [build]
+            arguments:
+              parameters:
+                - name: commit-sha
+                  value: "{{workflow.parameters.commit-sha}}"
+
+    - name: clone-repo
+      inputs:
+        parameters:
+          - name: repo-url
+          - name: commit-sha
+      container:
+        image: alpine/git:latest
+        command: [sh, -c]
+        args:
+          - |
+            echo "machine github.com login x-token-auth password $(cat /secret/token)" > /root/.netrc
+            chmod 600 /root/.netrc
+            git clone "{{inputs.parameters.repo-url}}" /workspace/src
+            cd /workspace/src
+            git checkout "{{inputs.parameters.commit-sha}}"
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+          - name: github-token
+            mountPath: /secret
+            readOnly: true
+
+    - name: build-apk
+      inputs:
+        parameters:
+          - name: commit-sha
+      container:
+        image: ghcr.io/cirruslabs/flutter:stable
+        command: [sh, -c]
+        args:
+          - |
+            set -e
+
+            # Decode keystore from base64
+            echo "$KEYSTORE_B64" | base64 -d > /tmp/release.p12
+
+            # Write key.properties for Gradle
+            cat > /workspace/src/flutter_app/android/key.properties << EOF
+            storePassword=$STORE_PASSWORD
+            keyPassword=$KEY_PASSWORD
+            keyAlias=$KEY_ALIAS
+            storeFile=/tmp/release.p12
+            EOF
+
+            cd /workspace/src/flutter_app
+
+            # Patch constants.dart with prod URL
+            sed -i "s|http://192.168.0.125:8000|https://api.knodes.app|g" lib/core/constants.dart
+            sed -i "s|http://localhost:8000|https://api.knodes.app|g" lib/core/constants.dart
+
+            flutter pub get
+            flutter build apk --release
+
+            cp build/app/outputs/flutter-apk/app-release.apk /workspace/knodes-{{inputs.parameters.commit-sha}}.apk
+            cp build/app/outputs/flutter-apk/app-release.apk /workspace/knodes-latest.apk
+            echo "APK built successfully"
+            ls -lh /workspace/*.apk
+        env:
+          - name: KEYSTORE_B64
+            valueFrom:
+              secretKeyRef:
+                name: android-keystore
+                key: keystore.p12
+          - name: STORE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: android-keystore
+                key: store-password
+          - name: KEY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: android-keystore
+                key: key-password
+          - name: KEY_ALIAS
+            valueFrom:
+              secretKeyRef:
+                name: android-keystore
+                key: key-alias
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+          - name: android-keystore
+            mountPath: /keystore
+            readOnly: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: "2"
+
+    - name: upload-apk
+      inputs:
+        parameters:
+          - name: commit-sha
+      container:
+        image: amazon/aws-cli:latest
+        command: [sh, -c]
+        args:
+          - |
+            set -e
+            export AWS_ACCESS_KEY_ID="$OCI_ACCESS_KEY"
+            export AWS_SECRET_ACCESS_KEY="$OCI_SECRET_KEY"
+            export AWS_DEFAULT_REGION="$OCI_REGION"
+            ENDPOINT="https://${OCI_NAMESPACE}.compat.objectstorage.${OCI_REGION}.oraclecloud.com"
+
+            # Upload commit-sha version
+            aws s3 cp /workspace/knodes-{{inputs.parameters.commit-sha}}.apk \
+              "s3://${OCI_BUCKET}/apks/knodes-{{inputs.parameters.commit-sha}}.apk" \
+              --endpoint-url "$ENDPOINT" \
+              --acl public-read
+
+            # Upload/overwrite latest
+            aws s3 cp /workspace/knodes-latest.apk \
+              "s3://${OCI_BUCKET}/apks/knodes-latest.apk" \
+              --endpoint-url "$ENDPOINT" \
+              --acl public-read
+
+            echo "APK available at:"
+            echo "${ENDPOINT}/${OCI_BUCKET}/apks/knodes-latest.apk"
+        env:
+          - name: OCI_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: registry-oci-credentials
+                key: access_key
+          - name: OCI_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: registry-oci-credentials
+                key: secret_key
+          - name: OCI_REGION
+            valueFrom:
+              secretKeyRef:
+                name: registry-oci-credentials
+                key: region
+          - name: OCI_NAMESPACE
+            valueFrom:
+              secretKeyRef:
+                name: registry-oci-credentials
+                key: namespace
+          - name: OCI_BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: registry-oci-credentials
+                key: bucket
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
