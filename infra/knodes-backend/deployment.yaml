@@ -25,6 +25,15 @@ spec:
             - secretRef:
                 name: backend-secrets
             - secretRef:
-                name: backend-firebase
-            - secretRef:
                 name: backend-anthropic
+          env:
+            - name: FIREBASE_SERVICE_ACCOUNT_JSON
+              value: /etc/firebase/FIREBASE_SERVICE_ACCOUNT_JSON
+          volumeMounts:
+            - name: firebase-secret
+              mountPath: /etc/firebase
+              readOnly: true
+      volumes:
+        - name: firebase-secret
+          secret:
+            secretName: backend-firebase
