@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: backend-anthropic
+  namespace: knodes-backend
+spec:
+  encryptedData:
+    ANTHROPIC_API_KEY: AgCQiTOoWPP5SimHoGtNFTMxzdvAyEoIGPuZEBAVgWymhO3gGX/fsjMqFi143JrDJbfhW9vwdPfJQduvouUmTjUdGg3R7l+AJ4rALKZnis1zyTD9M/+oJSvJIMpZfsvNjN770VscWa7GHMnldM9cuKqPF8uLOnaGx+1yIg+6xdQpauDqxLPK0+Jf4/JO3CeunEu55UIsQwAbpsvrIPJgS6z4knw4UK4oCaNcJIdS8iP7I1ekdorvQNSmYy8kKGhunuNBpj5GdBxct6c1XQ9LYpcYFNfWDbdq7DtmwfIwaw92CW8R41KEIQhE0DcI/UdewEmMhywFou/hoFSSbWeUwSM4LXfFLwmYL2Tt4qHWi0Jp1QQ5wpnbIoQpnQHkZUgFsQ2GuHBiRKuAIzTnK/ISsqu0EDW5h+iA7Xw6h1+E1kfPboLdWqfi7xHLzcyv0EGwp6JE7FpgmSnrzFER7CNU2TVJNI/4ClaFO10u5XP2Pmv0DF38nm3+wBBzqx7VpCpM5ZPXKJeQh2Zhmmxb4AgnxSFzs/H8qePye9KjRYhf8WQiyDnLNJHCYqF1WDZuqfW1qVrbFlHbPYZD6NYrtMadUJWYNo4dGTJsaTHNkvheIMhcIEK7CRsfZvjRgJaKTn75RawyhNJQv30kgbqwnlL9nxCbNj4k6RcFlLKDpi6tRLpfFLar2Tfh5IvBcEwdFXTxocEEUu1x5t1ZPwRzFNQoelX6HNEDg57G4d/tBDOyk8w8SZbBv9IHi39WVOLFRCsvzik6PLlY8lDNo2iQZDLanbYS7FinLY+DbwCX6nH51wOJNY0NEqGxd5ZdatScKIwRNMgDQGYrDqPc2P6/5Ag=
+  template:
+    metadata:
+      name: backend-anthropic
+      namespace: knodes-backend

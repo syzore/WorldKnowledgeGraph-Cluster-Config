@@ -21,3 +21,10 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: backend-secrets
+            - secretRef:
+                name: backend-firebase
+            - secretRef:
+                name: backend-anthropic
