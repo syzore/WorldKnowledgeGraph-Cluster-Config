@@ -147,17 +147,14 @@ spec:
         args:
           - |
             apk add --no-cache git
-            wget -qO /usr/local/bin/yq \
-              https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_arm64
-            chmod +x /usr/local/bin/yq
             git config --global user.email "pipeline@knodes.app"
             git config --global user.name "Knodes Pipeline"
             git clone \
               "https://$(GITHUB_TOKEN)@github.com/syzore/WorldKnowledgeGraph-Cluster-Config.git" \
               /tmp/cluster-config
             cd /tmp/cluster-config
-            yq e ".spec.template.spec.containers[0].image = \"registry.knodes.app/{{inputs.parameters.service-name}}:{{inputs.parameters.commit-sha}}\"" \
-              -i "infra/{{inputs.parameters.service-name}}/deployment.yaml"
+            sed -i "s|registry.knodes.app/{{inputs.parameters.service-name}}:.*|registry.knodes.app/{{inputs.parameters.service-name}}:{{inputs.parameters.commit-sha}}|" \
+              "infra/{{inputs.parameters.service-name}}/deployment.yaml"
             git add "infra/{{inputs.parameters.service-name}}/deployment.yaml"
             git commit -m "chore: deploy {{inputs.parameters.service-name}}@{{inputs.parameters.commit-sha}}"
             git push
