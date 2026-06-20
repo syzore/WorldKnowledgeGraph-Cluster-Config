@@ -16,6 +16,7 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
+          command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
           ports:
             - containerPort: 6379
           volumeMounts:

@@ -26,6 +26,17 @@ spec:
                 secretKeyRef:
                   name: neo4j-credentials
                   key: auth
+            - name: NEO4J_server_memory_heap_initial__size
+              value: "1024m"
+            - name: NEO4J_server_memory_heap_max__size
+              value: "1500m"
+            - name: NEO4J_server_memory_pagecache__size
+              value: "1g"
+          resources:
+            requests:
+              memory: 2Gi
+            limits:
+              memory: 3Gi
           volumeMounts:
             - name: data
               mountPath: /data
