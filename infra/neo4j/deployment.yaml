@@ -4,7 +4,7 @@ metadata:
   name: neo4j
   namespace: knodes-backend
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: neo4j
