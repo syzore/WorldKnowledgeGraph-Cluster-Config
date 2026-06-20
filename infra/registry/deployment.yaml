@@ -16,6 +16,33 @@ spec:
       containers:
         - name: registry
           image: registry:2.8.3
+          command: [sh, -c]
+          args:
+            - |
+              cat > /tmp/config.yml << EOF
+              version: 0.1
+              storage:
+                s3:
+                  accesskey: $OCI_ACCESS_KEY
+                  secretkey: $OCI_SECRET_KEY
+                  region: $OCI_REGION
+                  regionendpoint: https://$OCI_NAMESPACE.compat.objectstorage.$OCI_REGION.oraclecloud.com
+                  bucket: $OCI_BUCKET
+                  secure: true
+                  v4auth: true
+                  chunksize: 5242880
+                  multipartcopythresholdsize: 33554432
+              http:
+                addr: :5000
+                secret: knodes-registry-http-secret-xk9m2p7r
+              auth:
+                htpasswd:
+                  realm: registry.knodes.app
+                  path: /auth/htpasswd
+              log:
+                level: info
+              EOF
+              exec /bin/registry serve /tmp/config.yml
           ports:
             - containerPort: 5000
           env:
@@ -45,8 +72,6 @@ spec:
                   name: registry-oci-credentials
                   key: bucket
           volumeMounts:
-            - name: config
-              mountPath: /etc/docker/registry
             - name: auth
               mountPath: /auth
           readinessProbe:
@@ -56,9 +81,6 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
-        - name: config
-          configMap:
-            name: registry-config
         - name: auth
           secret:
             secretName: registry-htpasswd
