@@ -99,7 +99,7 @@ spec:
           - name: build-args
             value: ""
       container:
-        image: gcr.io/kaniko-project/executor:latest
+        image: gcr.io/kaniko-project/executor:debug
         command: [sh, -c]
         args:
           - |
