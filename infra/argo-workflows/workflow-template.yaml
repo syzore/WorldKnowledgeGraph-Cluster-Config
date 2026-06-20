@@ -148,7 +148,7 @@ spec:
           - |
             apk add --no-cache git
             wget -qO /usr/local/bin/yq \
-              https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64
+              https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_arm64
             chmod +x /usr/local/bin/yq
             git config --global user.email "pipeline@knodes.app"
             git config --global user.name "Knodes Pipeline"
